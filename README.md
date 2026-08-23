@@ -28,6 +28,10 @@ veggie-store/
 ```bash
 cd backend
 npm install
+copy .env.example .env
+# Edit .env and set DB_PASSWORD to your MySQL password.
+mysql -u root -p < schema.sql
+npm run seed
 npm start
 ```
 
@@ -52,12 +56,12 @@ The app runs at `http://localhost:5173` and proxies `/api/*` calls to the backen
 2. Browse vegetables from the Home page or the **Vegetables** tab, filter by category.
 3. Add items to your cart (no login required to browse or add to cart).
 4. Go to **Cart** → **Place order**. You'll be asked to log in / sign up first — the
-   signup form creates a real account against the backend (in-memory, resets on restart).
+  signup form creates a real account against the MySQL database.
 
 ## Notes for going to production
 
-- User accounts and the server-side cart are stored **in memory** in the backend for
-  simplicity — swap in a real database (Postgres, MongoDB, etc.) before deploying.
+- User accounts, the catalog, and the server-side cart are stored in MySQL. Configure
+  the connection in `backend/.env` before starting the API.
 - Set a strong `JWT_SECRET` environment variable instead of the built-in dev default.
 - Prices live in `backend/data/vegetables.js` — edit that file to change stock/prices
   or add new vegetables and categories.
