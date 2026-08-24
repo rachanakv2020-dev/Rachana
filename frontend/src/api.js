@@ -1,4 +1,4 @@
-const BASE_URL = "/api";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 
 async function request(path, { method = "GET", body, token } = {}) {
   const headers = { "Content-Type": "application/json" };
@@ -27,4 +27,7 @@ export const api = {
     const query = new URLSearchParams(params).toString();
     return request(`/products${query ? `?${query}` : ""}`);
   },
+  checkout: (payload, token) => request("/orders/checkout", { method: "POST", body: payload, token }),
+  createRazorpayOrder: (payload, token) => request("/orders/razorpay-order", { method: "POST", body: payload, token }),
+  verifyRazorpayPayment: (payload, token) => request("/orders/razorpay-verify", { method: "POST", body: payload, token }),
 };

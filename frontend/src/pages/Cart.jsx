@@ -2,38 +2,30 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import { api } from "../api.js";
 
 export default function Cart() {
   const { items, updateQuantity, removeFromCart, clearCart, totalPrice, totalItems } = useCart();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
-  const [placed, setPlaced] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
+  const [checkingOut, setCheckingOut] = useState(false);
 
   const deliveryFee = totalPrice > 0 && totalPrice < 200 ? 20 : 0;
   const grandTotal = Number((totalPrice + deliveryFee).toFixed(2));
 
-  function handleCheckout() {
+  async function handleCheckout() {
     if (!user) {
       navigate("/login");
       return;
     }
-    setPlaced(true);
-    clearCart();
-  }
-
-  if (placed) {
-    return (
-      <div className="cart cart--empty">
-        <div className="cart__empty-card">
-          <span className="cart__empty-emoji">✅</span>
-          <h1>Order placed!</h1>
-          <p>Thanks {user?.name.split(" ")[0]}, your fresh vegetables are on the way.</p>
-          <Link to="/products" className="btn btn--primary btn--large">
-            Keep shopping
-          </Link>
-        </div>
-      </div>
-    );
+    setCheckingOut(true);
+    setCheckoutError("");
+    try {
+      navigate("/address", { state: { fromCheckout: true } });
+    } catch (error) {
+      setCheckoutError(error.message);
+    } finally { setCheckingOut(false); }
   }
 
   if (items.length === 0) {
@@ -97,8 +89,9 @@ export default function Cart() {
             <span>₹{grandTotal.toFixed(2)}</span>
           </div>
           <button className="btn btn--primary btn--large cart__checkout" onClick={handleCheckout}>
-            {user ? "Place order" : "Log in to checkout"}
+            {checkingOut ? "Processing..." : user ? "Place order" : "Log in to checkout"}
           </button>
+          {checkoutError && <p className="cart__hint">{checkoutError}</p>}
           <button className="cart__clear" onClick={clearCart}>
             Clear basket
           </button>

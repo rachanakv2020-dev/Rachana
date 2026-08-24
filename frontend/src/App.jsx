@@ -5,6 +5,9 @@ import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
 import Products from "./pages/Products.jsx";
 import Cart from "./pages/Cart.jsx";
+import Payment from "./pages/Payment.jsx";
+import OrderSuccess from "./pages/OrderSuccess.jsx";
+import Address from "./pages/Address.jsx";
 
 export default function App() {
   return (
@@ -16,6 +19,9 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/products" element={<Products />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/payment" element={<Payment />} />
+          <Route path="/address" element={<Address />} />
+          <Route path="/order-success" element={<OrderSuccess />} />
         </Routes>
       </main>
       <footer className="footer">

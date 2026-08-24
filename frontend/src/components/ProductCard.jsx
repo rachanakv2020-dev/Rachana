@@ -14,8 +14,12 @@ export default function ProductCard({ product }) {
   return (
     <article className="crate">
       {product.tag && <span className="crate__ribbon">{product.tag}</span>}
-      <div className="crate__emoji" aria-hidden="true">
-        {product.image}
+      <div className="crate__emoji">
+        {typeof product.image === "string" && (product.image.startsWith("http://") || product.image.startsWith("https://") || product.image.startsWith("/")) ? (
+          <img src={product.image.startsWith("/") ? `${import.meta.env.VITE_UPLOADS_BASE_URL || "http://localhost:5001"}${product.image}` : product.image} alt={product.name} onError={(event) => { event.currentTarget.style.display = "none"; }} />
+        ) : (
+          <span aria-hidden="true">{product.image}</span>
+        )}
       </div>
       <h3 className="crate__name">{product.name}</h3>
       <p className="crate__stock">{product.stock} {product.unit} in stock</p>

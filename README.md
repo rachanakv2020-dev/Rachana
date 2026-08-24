@@ -5,8 +5,10 @@ login/signup, a categorized product catalog with **fixed prices**, and a shoppin
 
 ```
 veggie-store/
-├── backend/     Node.js + Express API (auth, products, categories, cart)
-└── frontend/    React (Vite) app with the shopping UI
+├── backend/          Node.js + Express customer API (auth, products, categories, cart)
+├── frontend/         React (Vite) app with the shopping UI
+├── admin_backend/    Node.js + Express admin-only API
+└── admin_frontend/   React (Vite) app for store operations
 ```
 
 ## Features
@@ -50,7 +52,49 @@ npm run dev
 The app runs at `http://localhost:5173` and proxies `/api/*` calls to the backend
 (see `frontend/vite.config.js`), so keep the backend running at the same time.
 
-### 3. Try it out
+### 3. Admin frontend
+
+For an existing database, run `backend/migrations/admin-role.sql` once first. Set
+`ADMIN_EMAIL`, `ADMIN_PASSWORD`, and optionally `ADMIN_NAME` in `backend/.env`, then run
+`npm run seed` once to provision the admin account. Start the separate admin app:
+
+```bash
+cd admin_frontend
+npm install
+npm run dev
+```
+
+The admin app runs at `http://localhost:5174` and uses the separate admin API at
+`http://localhost:5001`. Its login only issues a token for users whose database role is
+`admin`.
+
+### Razorpay payments
+
+Create Razorpay test keys from the Razorpay Dashboard and set them in `backend/.env`:
+
+```env
+RAZORPAY_KEY_ID=rzp_test_your_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
+```
+
+Set the matching public key in `frontend/.env`:
+
+```env
+VITE_RAZORPAY_KEY_ID=rzp_test_your_key_id
+```
+
+Customers now go from the basket to `/payment`. The backend creates the Razorpay order
+and verifies the payment signature before marking the order and payment as paid. Use
+Razorpay test mode credentials while developing; never put `RAZORPAY_KEY_SECRET` in a
+frontend `.env` file or commit any real keys.
+
+Each app has its own environment file: `frontend/.env` controls the customer Vite app,
+`admin_frontend/.env` controls the admin Vite app, `backend/.env` controls the customer
+API and database credentials, and `admin_backend/.env` controls the admin API and its
+database connection. Copy the matching `.env.example` files when setting up another
+environment, and never commit the `.env` files.
+
+### 4. Try it out
 
 1. Open `http://localhost:5173`.
 2. Browse vegetables from the Home page or the **Vegetables** tab, filter by category.

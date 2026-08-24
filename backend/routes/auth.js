@@ -43,7 +43,7 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Email and password are required." });
     }
 
-    const [userRows] = await pool.query("SELECT id, name, email, password_hash FROM users WHERE email = ?", [email.toLowerCase()]);
+    const [userRows] = await pool.query("SELECT id, name, email, password_hash, role FROM users WHERE email = ?", [email.toLowerCase()]);
     const user = userRows[0];
     if (!user) {
       return res.status(401).json({ message: "Incorrect email or password." });
@@ -54,11 +54,11 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Incorrect email or password." });
     }
 
-    const token = jwt.sign({ id: user.id, name: user.name, email: user.email }, JWT_SECRET, {
+    const token = jwt.sign({ id: user.id, name: user.name, email: user.email, role: user.role }, JWT_SECRET, {
       expiresIn: "7d",
     });
 
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
+    res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
   } catch (err) {
     res.status(500).json({ message: "Something went wrong while logging you in." });
   }

@@ -7,16 +7,16 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   try {
   const { category, search } = req.query;
-  let query = "SELECT id, name, category_id AS category, price, unit, stock, tag, image FROM vegetables";
+  let query = "SELECT id, name, category_id AS category, price, unit, stock, listed, tag, image FROM vegetables WHERE listed = 1";
   const values = [];
 
   if (category && category !== "all") {
-    query += " WHERE category_id = ?";
+    query += " AND category_id = ?";
     values.push(category);
   }
 
   if (search) {
-    query += values.length ? " AND" : " WHERE";
+    query += " AND";
     query += " LOWER(name) LIKE ?";
     values.push(`%${search.toLowerCase()}%`);
   }

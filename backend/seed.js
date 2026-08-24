@@ -1,4 +1,6 @@
 const pool = require("./db");
+const bcrypt = require("bcryptjs");
+require("dotenv").config();
 const { categories, vegetables } = require("./data/vegetables");
 
 async function seed() {
@@ -18,6 +20,16 @@ async function seed() {
       "INSERT INTO vegetables (id, name, category_id, price, unit, stock, tag, image) VALUES ?",
       [vegetables.map(({ id, name, category, price, unit, stock, tag, image }) => [id, name, category, price, unit, stock, tag, image])]
     );
+
+    if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
+      const passwordHash = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
+      await connection.query(
+        `INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, 'admin')
+         ON DUPLICATE KEY UPDATE name = VALUES(name), password_hash = VALUES(password_hash), role = 'admin'`,
+        [process.env.ADMIN_NAME || "Store Administrator", process.env.ADMIN_EMAIL.toLowerCase(), passwordHash]
+      );
+      console.log(`Admin account provisioned for ${process.env.ADMIN_EMAIL.toLowerCase()}.`);
+    }
     await connection.commit();
     console.log(`Seeded ${categories.length} categories and ${vegetables.length} vegetables.`);
   } catch (error) {
