@@ -1,7 +1,7 @@
 {
   "name": "veggie-store-backend",
   "version": "1.0.0",
-  "description": "Backend API for the Farm Fresh vegetable store (auth + products)",
+  "description": "Backend API for the Farm Fresh vegetable store (customer + admin)",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
@@ -16,6 +16,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.2.0",
     "pg": "^8.12.0",
     "razorpay": "^2.9.8"
   },

@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_ADMIN_API_BASE_URL || "http://localhost:5001/api/admin";
+const BASE_URL = import.meta.env.VITE_ADMIN_API_BASE_URL || "http://localhost:5000/api/admin";
 
 async function request(path, { method = "GET", body } = {}) {
   const headers = { "Content-Type": "application/json" };
@@ -25,7 +25,7 @@ export const api = {
     const response = await fetch(`${BASE_URL}/products/upload`, { method: "POST", headers, body });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.message || "Unable to upload image.");
-    return { ...data, url: data.url.startsWith("http") ? data.url : `${import.meta.env.VITE_ADMIN_UPLOADS_BASE_URL || "http://localhost:5001"}${data.url}` };
+    return { ...data, url: data.url.startsWith("http") ? data.url : `${import.meta.env.VITE_ADMIN_UPLOADS_BASE_URL || "http://localhost:5000"}${data.url}` };
   },
   createProduct: (payload) => request("/products", { method: "POST", body: payload }),
   updateProduct: (id, payload) => request(`/products/${id}`, { method: "PUT", body: payload }),

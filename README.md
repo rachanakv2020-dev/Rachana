@@ -5,10 +5,10 @@ login/signup, a categorized product catalog with **fixed prices**, and a shoppin
 
 ```
 veggie-store/
-├── backend/          Node.js + Express customer API (auth, products, categories, cart)
-├── frontend/         React (Vite) app with the shopping UI
-├── admin_backend/    Node.js + Express admin-only API
-└── admin_frontend/   React (Vite) app for store operations
+├── backend/          Node.js + Express API — customer routes (/api/*) and admin routes (/api/admin/*)
+├── user_frontend/    React (Vite) app with the shopping UI
+├── admin_frontend/   React (Vite) app for store operations
+└── database/         PostgreSQL schema, seed data, and migrations
 ```
 
 ## Features
@@ -25,39 +25,48 @@ veggie-store/
 
 ## Getting started
 
-### 1. Backend
+### 1. Database
+
+```bash
+createdb veggie_store
+psql -d veggie_store -f database/schema.sql
+psql -d veggie_store -f database/seed.sql
+```
+
+New schema changes go in numbered files under `database/migrations/`; apply them in order
+against an existing database with `psql -d veggie_store -f database/migrations/00N_*.sql`.
+
+### 2. Backend
 
 ```bash
 cd backend
 npm install
 copy .env.example .env
 # edit .env with your PostgreSQL connection values
-createdb veggie_store
-psql -d veggie_store -f database/schema.sql
 npm run seed
 npm start
 ```
 
-The API runs at `http://localhost:5000`.
+The API runs at `http://localhost:5000` and serves both the customer routes (`/api/*`)
+and the admin routes (`/api/admin/*`) from one server.
 
-### 2. Frontend
+### 3. User frontend
 
 In a new terminal:
 
 ```bash
-cd frontend
+cd user_frontend
 npm install
 npm run dev
 ```
 
 The app runs at `http://localhost:5173` and proxies `/api/*` calls to the backend
-(see `frontend/vite.config.js`), so keep the backend running at the same time.
+(see `user_frontend/vite.config.js`), so keep the backend running at the same time.
 
-### 3. Admin frontend
+### 4. Admin frontend
 
-For an existing database, run `backend/migrations/admin-role.sql` once first. Set
-`ADMIN_EMAIL`, `ADMIN_PASSWORD`, and optionally `ADMIN_NAME` in `backend/.env`, then run
-`npm run seed` once to provision the admin account. Start the separate admin app:
+Set `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and optionally `ADMIN_NAME` in `backend/.env`, then run
+`npm run seed` (or `npm run provision-admin`) once to provision the admin account.
 
 ```bash
 cd admin_frontend
@@ -65,9 +74,9 @@ npm install
 npm run dev
 ```
 
-The admin app runs at `http://localhost:5174` and uses the separate admin API at
-`http://localhost:5001`. Its login only issues a token for users whose database role is
-`admin`.
+The admin app runs at `http://localhost:5174` and talks to the same backend at
+`http://localhost:5000`, under the `/api/admin` prefix. Its login only issues a token for
+users whose database role is `admin`.
 
 ### Razorpay payments
 
@@ -78,7 +87,7 @@ RAZORPAY_KEY_ID=rzp_test_your_key_id
 RAZORPAY_KEY_SECRET=your_razorpay_key_secret
 ```
 
-Set the matching public key in `frontend/.env`:
+Set the matching public key in `user_frontend/.env`:
 
 ```env
 VITE_RAZORPAY_KEY_ID=rzp_test_your_key_id
@@ -89,13 +98,13 @@ and verifies the payment signature before marking the order and payment as paid.
 Razorpay test mode credentials while developing; never put `RAZORPAY_KEY_SECRET` in a
 frontend `.env` file or commit any real keys.
 
-Each app has its own environment file: `frontend/.env` controls the customer Vite app,
-`admin_frontend/.env` controls the admin Vite app, `backend/.env` controls the customer
-API and database credentials, and `admin_backend/.env` controls the admin API and its
-database connection. Copy the matching `.env.example` files when setting up another
-environment, and never commit the `.env` files.
+Each app has its own environment file: `user_frontend/.env` controls the customer Vite
+app, `admin_frontend/.env` controls the admin Vite app, and `backend/.env` controls the
+API (both customer and admin routes) and its database connection. Copy the matching
+`.env.example` files when setting up another environment, and never commit the `.env`
+files.
 
-### 4. Try it out
+### 5. Try it out
 
 1. Open `http://localhost:5173`.
 2. Browse vegetables from the Home page or the **Vegetables** tab, filter by category.
@@ -116,3 +125,4 @@ environment, and never commit the `.env` files.
 
 - **Frontend:** React 18, React Router, Vite, plain CSS (no UI framework)
 - **Backend:** Node.js, Express, JWT auth, bcrypt password hashing
+- **Database:** PostgreSQL
