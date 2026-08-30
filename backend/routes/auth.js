@@ -6,7 +6,6 @@ const pool = require("../db");
 
 const router = express.Router();
 
-// In-memory user store. Replace with a real database for production use.
 router.post("/signup", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -15,14 +14,18 @@ router.post("/signup", async (req, res) => {
       return res.status(400).json({ message: "Name, email and password are all required." });
     }
 
-    const [existingUsers] = await pool.query("SELECT id FROM users WHERE email = ?", [email.toLowerCase()]);
+    const normalizedEmail = email.toLowerCase();
+    const { rows: existingUsers } = await pool.query("SELECT id FROM users WHERE email = $1", [normalizedEmail]);
     if (existingUsers.length) {
       return res.status(409).json({ message: "An account with this email already exists." });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const [result] = await pool.query("INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)", [name, email.toLowerCase(), passwordHash]);
-    const user = { id: result.insertId, name, email: email.toLowerCase() };
+    const { rows: result } = await pool.query(
+      "INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id",
+      [name, normalizedEmail, passwordHash]
+    );
+    const user = { id: result[0].id, name, email: normalizedEmail };
 
     const token = jwt.sign({ id: user.id, name: user.name, email: user.email }, JWT_SECRET, {
       expiresIn: "7d",
@@ -43,7 +46,10 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Email and password are required." });
     }
 
-    const [userRows] = await pool.query("SELECT id, name, email, password_hash, role FROM users WHERE email = ?", [email.toLowerCase()]);
+    const { rows: userRows } = await pool.query(
+      "SELECT id, name, email, password_hash, role FROM users WHERE email = $1",
+      [email.toLowerCase()]
+    );
     const user = userRows[0];
     if (!user) {
       return res.status(401).json({ message: "Incorrect email or password." });

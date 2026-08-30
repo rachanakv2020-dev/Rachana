@@ -10,7 +10,7 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ message: "Email and password are required." });
-    const [rows] = await pool.query("SELECT id, name, email, password_hash, role FROM users WHERE email = ? AND role = 'admin'", [email.toLowerCase()]);
+    const { rows } = await pool.query("SELECT id, name, email, password_hash, role FROM users WHERE email = $1 AND role = 'admin'", [email.toLowerCase()]);
     const user = rows[0];
     if (!user || !(await bcrypt.compare(password, user.password_hash))) return res.status(403).json({ message: "Admin access denied." });
     const safeUser = { id: user.id, name: user.name, email: user.email, role: user.role };

@@ -1,10 +1,18 @@
-USE veggie_store;
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'customer';
 
 ALTER TABLE users
-  ADD COLUMN role ENUM('customer', 'admin') NOT NULL DEFAULT 'customer';
+  ALTER COLUMN role SET DEFAULT 'customer';
 
 ALTER TABLE vegetables
-  MODIFY COLUMN image VARCHAR(1000) NOT NULL;
+  ADD COLUMN IF NOT EXISTS image VARCHAR(1000);
+
+UPDATE vegetables
+SET image = COALESCE(image, '🥬')
+WHERE image IS NULL;
 
 ALTER TABLE vegetables
-  ADD COLUMN listed TINYINT(1) NOT NULL DEFAULT 1;
+  ALTER COLUMN image SET NOT NULL;
+
+ALTER TABLE vegetables
+  ADD COLUMN IF NOT EXISTS listed BOOLEAN NOT NULL DEFAULT true;

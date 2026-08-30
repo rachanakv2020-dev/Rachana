@@ -31,8 +31,9 @@ veggie-store/
 cd backend
 npm install
 copy .env.example .env
-# Edit .env and set DB_PASSWORD to your MySQL password.
-mysql -u root -p < schema.sql
+# edit .env with your PostgreSQL connection values
+createdb veggie_store
+psql -d veggie_store -f database/schema.sql
 npm run seed
 npm start
 ```
@@ -100,11 +101,11 @@ environment, and never commit the `.env` files.
 2. Browse vegetables from the Home page or the **Vegetables** tab, filter by category.
 3. Add items to your cart (no login required to browse or add to cart).
 4. Go to **Cart** → **Place order**. You'll be asked to log in / sign up first — the
-  signup form creates a real account against the MySQL database.
+  signup form creates a real account against the PostgreSQL database.
 
 ## Notes for going to production
 
-- User accounts, the catalog, and the server-side cart are stored in MySQL. Configure
+- User accounts, the catalog, and the server-side cart are stored in PostgreSQL. Configure
   the connection in `backend/.env` before starting the API.
 - Set a strong `JWT_SECRET` environment variable instead of the built-in dev default.
 - Prices live in `backend/data/vegetables.js` — edit that file to change stock/prices

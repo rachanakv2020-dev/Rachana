@@ -1,64 +1,68 @@
 const bcrypt = require("bcryptjs");
-const mysql = require("mysql2/promise");
+const { Client } = require("pg");
 require("dotenv").config();
 
 async function provisionAdmin() {
-  const db = await mysql.createConnection({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
+  const client = new Client({
+    host: process.env.DB_HOST || "localhost",
+    port: Number(process.env.DB_PORT || 5432),
+    user: process.env.DB_USER || "postgres",
+    password: process.env.DB_PASSWORD || undefined,
+    database: process.env.DB_NAME || "veggie_store",
   });
 
+  await client.connect();
+
   try {
-    try {
-      await db.query("ALTER TABLE users ADD COLUMN role ENUM('customer','admin') NOT NULL DEFAULT 'customer'");
-    } catch (error) {
-      if (error.code !== "ER_DUP_FIELDNAME") throw error;
-    }
-    await db.query("ALTER TABLE vegetables MODIFY COLUMN image VARCHAR(1000) NOT NULL");
-    try {
-      await db.query("ALTER TABLE vegetables ADD COLUMN listed TINYINT(1) NOT NULL DEFAULT 1");
-    } catch (error) {
-      if (error.code !== "ER_DUP_FIELDNAME") throw error;
-    }
-    await db.query(`CREATE TABLE IF NOT EXISTS orders (
-      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-      user_id INT UNSIGNED NOT NULL,
+    await client.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'customer'");
+    await client.query("ALTER TABLE users ALTER COLUMN role SET DEFAULT 'customer'");
+    await client.query("ALTER TABLE vegetables ADD COLUMN IF NOT EXISTS image VARCHAR(1000)");
+    await client.query("UPDATE vegetables SET image = COALESCE(image, '🥬') WHERE image IS NULL");
+    await client.query("ALTER TABLE vegetables ALTER COLUMN image SET NOT NULL");
+    await client.query("ALTER TABLE vegetables ADD COLUMN IF NOT EXISTS listed BOOLEAN NOT NULL DEFAULT true");
+
+    await client.query(`CREATE TABLE IF NOT EXISTS orders (
+      id BIGSERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
       shipping_address VARCHAR(500) NOT NULL,
-      total DECIMAL(10, 2) NOT NULL,
-      status ENUM('pending', 'processing', 'completed', 'cancelled') NOT NULL DEFAULT 'pending',
-      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (id),
+      total NUMERIC(10, 2) NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'cancelled')),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
     )`);
-    try { await db.query("ALTER TABLE orders ADD COLUMN shipping_address VARCHAR(500) NOT NULL DEFAULT ''"); }
-    catch (error) { if (error.code !== "ER_DUP_FIELDNAME") throw error; }
-    await db.query(`CREATE TABLE IF NOT EXISTS payments (
-      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-      order_id BIGINT UNSIGNED NOT NULL,
-      user_id INT UNSIGNED NOT NULL,
-      amount DECIMAL(10, 2) NOT NULL,
+    await client.query("ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_address VARCHAR(500)");
+    await client.query("UPDATE orders SET shipping_address = '' WHERE shipping_address IS NULL");
+    await client.query("ALTER TABLE orders ALTER COLUMN shipping_address SET NOT NULL");
+
+    await client.query(`CREATE TABLE IF NOT EXISTS payments (
+      id BIGSERIAL PRIMARY KEY,
+      order_id BIGINT NOT NULL,
+      user_id INTEGER NOT NULL,
+      amount NUMERIC(10, 2) NOT NULL,
       method VARCHAR(40) NOT NULL DEFAULT 'Cash on delivery',
-      status ENUM('pending', 'paid', 'failed', 'refunded') NOT NULL DEFAULT 'pending',
-      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (id),
+      gateway_order_id VARCHAR(100),
+      gateway_payment_id VARCHAR(100),
+      status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'failed', 'refunded')),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       CONSTRAINT fk_payments_order FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE,
       CONSTRAINT fk_payments_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
     )`);
-    try { await db.query("ALTER TABLE payments ADD COLUMN gateway_order_id VARCHAR(100) NULL, ADD COLUMN gateway_payment_id VARCHAR(100) NULL"); }
-    catch (error) { if (error.code !== "ER_DUP_FIELDNAME") throw error; }
+    await client.query("ALTER TABLE payments ADD COLUMN IF NOT EXISTS gateway_order_id VARCHAR(100)");
+    await client.query("ALTER TABLE payments ADD COLUMN IF NOT EXISTS gateway_payment_id VARCHAR(100)");
 
     const passwordHash = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
-    await db.query(
-      `INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, 'admin')
-       ON DUPLICATE KEY UPDATE name = VALUES(name), password_hash = VALUES(password_hash), role = 'admin'`,
-      [process.env.ADMIN_NAME, process.env.ADMIN_EMAIL.toLowerCase(), passwordHash]
+    await client.query(
+      `INSERT INTO users (name, email, password_hash, role)
+       VALUES ($1, $2, $3, 'admin')
+       ON CONFLICT (email) DO UPDATE SET
+         name = EXCLUDED.name,
+         password_hash = EXCLUDED.password_hash,
+         role = 'admin'`,
+      [process.env.ADMIN_NAME || "Store Administrator", process.env.ADMIN_EMAIL.toLowerCase(), passwordHash]
     );
     console.log(`Admin account ready: ${process.env.ADMIN_EMAIL.toLowerCase()}`);
   } finally {
-    await db.end();
+    await client.end();
   }
 }
 
