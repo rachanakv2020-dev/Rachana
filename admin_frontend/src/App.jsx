@@ -11,8 +11,8 @@ const demoOrders = [
 ];
 
 function AdminLogin({ onLogin }) {
-  const [email, setEmail] = useState("admin@farmfresh.co");
-  const [password, setPassword] = useState("farmfresh");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   async function submit(event) {

@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App.jsx";
-import "../../frontend/src/index.css";
+import "../../user_frontend/src/index.css";
 import "./admin-login.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
