@@ -4,7 +4,8 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://your-backend-domain.com/api/$1" },
+    { "source": "/api/(.*)", "destination": "https://farmfresh-backend-ohd1.onrender.com/api/$1" },
+    { "source": "/uploads/(.*)", "destination": "https://farmfresh-backend-ohd1.onrender.com/uploads/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
