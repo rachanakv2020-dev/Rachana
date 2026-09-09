@@ -6,7 +6,10 @@ export default function Home() {
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    api.getCategories().then(setCategories).catch(() => setCategories([]));
+    api
+      .getCategories()
+      .then((data) => setCategories(Array.isArray(data) ? data : []))
+      .catch(() => setCategories([]));
   }, []);
 
   return (

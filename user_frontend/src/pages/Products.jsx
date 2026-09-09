@@ -13,21 +13,24 @@ export default function Products() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.getCategories().then(setCategories).catch(() => setCategories([]));
+    api
+      .getCategories()
+      .then((data) => setCategories(Array.isArray(data) ? data : []))
+      .catch(() => setCategories([]));
   }, []);
 
   useEffect(() => {
     setLoading(true);
     api
       .getProducts({ category: activeCategory, search })
-      .then(setProducts)
+      .then((data) => setProducts(Array.isArray(data) ? data : []))
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
   }, [activeCategory, search]);
 
   const categoryLabel = useMemo(() => {
     if (activeCategory === "all") return "All vegetables";
-    return categories.find((c) => c.id === activeCategory)?.name || "Vegetables";
+    return (Array.isArray(categories) ? categories : []).find((c) => c.id === activeCategory)?.name || "Vegetables";
   }, [activeCategory, categories]);
 
   function selectCategory(id) {
